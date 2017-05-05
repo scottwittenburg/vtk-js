@@ -21,6 +21,7 @@ const renderWindow = vtkRenderWindow.newInstance();
 
 // Upper renderer
 const upperRenderer = vtkRenderer.newInstance();
+// const upperRenderer = vtkRenderer.newInstance({ preserveColorBuffer: true });
 upperRenderer.setViewport(0, 0.5, 1, 1); // xmin, ymin, xmax, ymax
 renderWindow.addRenderer(upperRenderer);
 upperRenderer.setBackground(0.5, 0, 0);
@@ -36,9 +37,10 @@ coneMapper.setInputConnection(coneSource.getOutputPort());
 
 // Lower left renderer
 const lowerLeftRenderer = vtkRenderer.newInstance();
+// const lowerLeftRenderer = vtkRenderer.newInstance({ preserveColorBuffer: false });
 lowerLeftRenderer.setViewport(0, 0, 0.5, 0.5); // xmin, ymin, xmax, ymax
 renderWindow.addRenderer(lowerLeftRenderer);
-lowerLeftRenderer.setBackground(0, 0.5, 0);
+// lowerLeftRenderer.setBackground(0, 0.5, 0);
 
 const sphereActor = vtkActor.newInstance();
 lowerLeftRenderer.addActor(sphereActor);
@@ -51,9 +53,10 @@ sphereMapper.setInputConnection(sphereSource.getOutputPort());
 
 // Lower right renderer
 const lowerRightRenderer = vtkRenderer.newInstance();
+// const lowerRightRenderer = vtkRenderer.newInstance({ preserveColorBuffer: false });
 lowerRightRenderer.setViewport(0.5, 0, 1, 0.5); // xmin, ymin, xmax, ymax
 renderWindow.addRenderer(lowerRightRenderer);
-lowerRightRenderer.setBackground(0, 0, 0.5);
+// lowerRightRenderer.setBackground(0, 0, 0.5);
 
 const cubeActor = vtkActor.newInstance();
 lowerRightRenderer.addActor(cubeActor);
@@ -69,8 +72,11 @@ glwindow.setContainer(renderWindowContainer);
 renderWindow.addView(glwindow);
 glwindow.setSize(400, 400);
 
+// upperRenderer.resetCameraClippingRange();
 upperRenderer.resetCamera();
+// lowerLeftRenderer.resetCameraClippingRange();
 lowerLeftRenderer.resetCamera();
+// lowerRightRenderer.resetCameraClippingRange();
 lowerRightRenderer.resetCamera();
 
 renderWindow.render();
