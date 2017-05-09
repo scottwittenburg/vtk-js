@@ -88,6 +88,16 @@ function updateRenderWindow(instance, props, context) {
   return update('vtkRenderWindow', instance, props, context);
 }
 
+function clearOneTimeUpdater(instanceId) {
+  delete ONE_TIME_INSTANCE_TRACKERS[instanceId];
+}
+
+function clearAllOneTimeUpdaters() {
+  Object.keys(ONE_TIME_INSTANCE_TRACKERS).forEach((key) => {
+    delete ONE_TIME_INSTANCE_TRACKERS[key];
+  });
+}
+
 // ----------------------------------------------------------------------------
 // Updater functions
 // ----------------------------------------------------------------------------
@@ -357,5 +367,7 @@ export default {
   setTypeMapping,
   clearTypeMapping,
   getSupportedTypes,
+  clearOneTimeUpdater,
+  clearAllOneTimeUpdaters,
   updateRenderWindow,
 };

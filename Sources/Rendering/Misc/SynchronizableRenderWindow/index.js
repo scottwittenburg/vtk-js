@@ -123,7 +123,10 @@ function createInstanceMap() {
 function getSynchronizerContext(name = 'default') {
   let ctx = SYNCHRONIZER_CONTEXTS[name];
   if (!ctx) {
-    ctx = Object.assign({}, createArrayHandler(), createInstanceMap());
+    ctx = Object.assign({}, createArrayHandler(), createInstanceMap(), {
+      clearOneTimeUpdater: vtkObjectManager.clearOneTimeUpdater,
+      clearAllOneTimeUpdaters: vtkObjectManager.clearAllOneTimeUpdaters,
+    });
     SYNCHRONIZER_CONTEXTS[name] = ctx;
   }
   return ctx;
