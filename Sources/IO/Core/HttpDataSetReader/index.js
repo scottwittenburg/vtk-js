@@ -75,6 +75,8 @@ function processDataSet(publicAPI, model, dataset, fetchArray, resolve, reject, 
 
   function success() {
     model.dataset = vtk(dataset);
+    console.log(`putting a dataset onto baseURL: ${model.baseURL}, url: ${model.url}`);
+    console.log(model.dataset);
     if (!loadData) {
       model.output[0] = model.dataset;
       resolve(publicAPI, model.output[0]);
@@ -193,10 +195,19 @@ function vtkHttpDataSetReader(publicAPI, model) {
   // Fetch the actual data arrays
   publicAPI.loadData = () => {
     const datasetObj = model.dataset;
+
+    if (!datasetObj) {
+      return new Promise((resolve, reject) => {
+        reject();
+      });
+    }
+
     const arrayToFecth = model.arrays
       .filter(array => array.enable)
       .filter(array => array.array.ref)
       .map(array => array.array);
+
+    console.log(arrayToFecth);
 
     return new Promise((resolve, reject) => {
       const error = (xhr, e) => {
