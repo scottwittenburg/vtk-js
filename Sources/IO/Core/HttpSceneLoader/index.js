@@ -71,6 +71,10 @@ const TYPE_MAPPING = {
   httpDataSetReader: loadHttpDataSetReader,
 };
 
+function updateDatasetTypeMapping(typeName, handler) {
+  TYPE_MAPPING[typeName] = handler;
+}
+
 // ----------------------------------------------------------------------------
 // vtkHttpSceneLoader methods
 // ----------------------------------------------------------------------------
@@ -198,4 +202,4 @@ export const newInstance = macro.newInstance(extend, 'vtkHttpSceneLoader');
 
 // ----------------------------------------------------------------------------
 
-export default { newInstance, extend, applySettings };
+export default { newInstance, extend, applySettings, updateDatasetTypeMapping };
