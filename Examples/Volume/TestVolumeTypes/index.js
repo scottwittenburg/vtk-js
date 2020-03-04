@@ -9,6 +9,7 @@ import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunct
 import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
 import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
+import vtkURLExtract from 'vtk.js/Sources/Common/Core/URLExtract';
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
 import vtkImageMapper from 'vtk.js/Sources/Rendering/Core/ImageMapper';
@@ -17,8 +18,16 @@ import Constants from 'vtk.js/Sources/Rendering/Core/ImageMapper/Constants';
 
 const { SlicingMode } = Constants;
 
+const userParams = vtkURLExtract.extractURLParameters();
+
 // Create some control UI
 const container = document.querySelector('body');
+
+// <script src="http://benvanik.github.com/WebGL-Inspector/core/embed.js"></script>
+const newScript = document.createElement('script');
+newScript.src = 'http://benvanik.github.com/WebGL-Inspector/core/embed.js';
+container.appendChild(newScript);
+
 container.style.width = '450px';
 container.style.height = '450px';
 const renderWindowContainer = document.createElement('div');
@@ -143,6 +152,86 @@ let numComp = 1;
 let independent = 1;
 let withGO = 1;
 let dataType = 2;
+
+const configureScene = (
+  shade,
+  numberOfComponents,
+  independentComponents,
+  useGradientOpacity,
+  typeOfData
+) => {
+  console.log(
+    `shade=${shade} numComponents=${numberOfComponents} independent=${independentComponents} GO=${useGradientOpacity} dataType=${typeOfData}`
+  );
+
+  actor.getProperty().setShade(shade);
+
+  actor.getProperty().setIndependentComponents(independentComponents);
+  sliceActor.getProperty().setIndependentComponents(independentComponents);
+
+  actor.getProperty().setUseGradientOpacity(0, useGradientOpacity);
+  actor.getProperty().setUseGradientOpacity(1, useGradientOpacity);
+  actor.getProperty().setUseGradientOpacity(2, useGradientOpacity);
+  actor.getProperty().setUseGradientOpacity(3, useGradientOpacity);
+
+  // create a synthetic volume with multiple components
+  const id = vtkImageData.newInstance();
+  id.setExtent(0, 99, 0, 99, 0, 199);
+
+  let newArray;
+
+  if (typeOfData === 0) {
+    newArray = new Uint8Array(200 * 100 * 100 * numberOfComponents);
+  }
+  if (typeOfData === 1) {
+    newArray = new Int16Array(200 * 100 * 100 * numberOfComponents);
+  }
+  if (typeOfData === 2) {
+    newArray = new Float32Array(200 * 100 * 100 * numberOfComponents);
+  }
+
+  for (let c = 0; c < numberOfComponents - 1; ++c) {
+    actor.getProperty().setComponentWeight(c, 0.2);
+  }
+  actor.getProperty().setComponentWeight(numberOfComponents - 1, 1.0);
+
+  let i = 0;
+  for (let z = 0; z <= 199; z++) {
+    for (let y = 0; y <= 99; y++) {
+      for (let x = 0; x <= 99; x++) {
+        newArray[i] =
+          40.0 *
+          (3.0 + Math.cos(x / 20.0) + Math.cos(y / 10.0) + Math.cos(z / 5.0));
+        if (numberOfComponents >= 2) {
+          newArray[i + 1] = independentComponents ? 0.2 * z : 1.25 * z;
+        }
+        if (numberOfComponents >= 3) {
+          newArray[i + 2] = 125.0 * Math.cos(y / 10.0) + 128.0;
+        }
+        if (numberOfComponents >= 4) {
+          newArray[i + 3] = 125.0 * Math.cos((x + z) / 15.0) + 128.0;
+        }
+        i += numberOfComponents;
+      }
+    }
+  }
+
+  const da = vtkDataArray.newInstance({
+    numberOfComponents,
+    values: newArray,
+  });
+  da.setName('scalars');
+
+  const cpd = id.getPointData();
+  cpd.setScalars(da);
+
+  mapper.setInputData(id);
+  // sliceMapper.setSliceAtFocalPoint(true);
+  sliceMapper.setSlicingMode(SlicingMode.K);
+  sliceMapper.setKSlice(100);
+  sliceMapper.setInputData(id);
+};
+
 const testAVolume = () => {
   // if (totalCount >= 1) {
   if (totalCount >= 120 * 3 * 2 * 4 * 2 * 2) {
@@ -156,13 +245,10 @@ const testAVolume = () => {
     // update lighting
     if (totalCount % (720 * 4 * 2) === 0) {
       lighting = (lighting + 1) % 2;
-      actor.getProperty().setShade(lighting);
     }
     // update independent
     if (totalCount % (720 * 4) === 0) {
       independent = (independent + 1) % 2;
-      actor.getProperty().setIndependentComponents(independent);
-      sliceActor.getProperty().setIndependentComponents(independent);
     }
     // update numComp
     if (totalCount % 720 === 0) {
@@ -171,72 +257,11 @@ const testAVolume = () => {
     // update withGO?
     if (totalCount % 360 === 0) {
       withGO = (withGO + 1) % 2;
-      actor.getProperty().setUseGradientOpacity(0, withGO);
-      actor.getProperty().setUseGradientOpacity(1, withGO);
-      actor.getProperty().setUseGradientOpacity(2, withGO);
-      actor.getProperty().setUseGradientOpacity(3, withGO);
     }
 
-    // create a synthetic volume with multiple components
-    const id = vtkImageData.newInstance();
-    id.setExtent(0, 99, 0, 99, 0, 199);
-
-    let newArray;
     dataType = (dataType + 1) % 3;
-    if (dataType === 0) {
-      newArray = new Uint8Array(200 * 100 * 100 * numComp);
-    }
-    if (dataType === 1) {
-      newArray = new Int16Array(200 * 100 * 100 * numComp);
-    }
-    if (dataType === 2) {
-      newArray = new Float32Array(200 * 100 * 100 * numComp);
-    }
 
-    for (let c = 0; c < numComp - 1; ++c) {
-      actor.getProperty().setComponentWeight(c, 0.2);
-    }
-    actor.getProperty().setComponentWeight(numComp - 1, 1.0);
-
-    let i = 0;
-    for (let z = 0; z <= 199; z++) {
-      for (let y = 0; y <= 99; y++) {
-        for (let x = 0; x <= 99; x++) {
-          newArray[i] =
-            40.0 *
-            (3.0 + Math.cos(x / 20.0) + Math.cos(y / 10.0) + Math.cos(z / 5.0));
-          if (numComp >= 2) {
-            newArray[i + 1] = independent ? 0.2 * z : 1.25 * z;
-          }
-          if (numComp >= 3) {
-            newArray[i + 2] = 125.0 * Math.cos(y / 10.0) + 128.0;
-          }
-          if (numComp >= 4) {
-            newArray[i + 3] = 125.0 * Math.cos((x + z) / 15.0) + 128.0;
-          }
-          i += numComp;
-        }
-      }
-    }
-
-    const da = vtkDataArray.newInstance({
-      numberOfComponents: numComp,
-      values: newArray,
-    });
-    da.setName('scalars');
-
-    const cpd = id.getPointData();
-    cpd.setScalars(da);
-
-    mapper.setInputData(id);
-    // sliceMapper.setSliceAtFocalPoint(true);
-    sliceMapper.setSlicingMode(SlicingMode.Z);
-    sliceMapper.setZSlice(100);
-    sliceMapper.setInputData(id);
-
-    console.log(
-      `shade=${lighting} independent=${independent} numComponents=${numComp} GO=${withGO} dataType=${dataType}`
-    );
+    configureScene(lighting, numComp, independent, withGO, dataType);
 
     if (totalCount === 0) {
       renderer.resetCamera();
@@ -252,6 +277,70 @@ const testAVolume = () => {
   renderWindow.render();
 };
 
-animcb = interactor.onAnimation(testAVolume);
+const myTestAVolume = () => {
+  // 1) shade=0 numComponents=2 independent=0 GO=0 dataType=0
+  // 2) shade=0 numComponents=2 independent=0 GO=0 dataType=1
+  // 3) shade=0 numComponents=2 independent=0 GO=1 dataType=0
+  // 4) shade=0 numComponents=1 independent=0 GO=0 dataType=0
+  const combinations = [
+    [0, 2, 0, 0, 0],
+    [0, 2, 0, 0, 1],
+    [0, 2, 0, 1, 0],
+    [0, 1, 0, 0, 0],
+    [0, 1, 1, 0, 0],
+  ];
+
+  if (totalCount >= 120 * combinations.length) {
+    interactor.cancelAnimation(actor);
+    animcb.unsubscribe();
+    return;
+  }
+
+  // do we need to update?
+  if (totalCount % 120 === 0) {
+    const index = totalCount / 120;
+
+    configureScene(...combinations[index]);
+
+    if (totalCount === 0) {
+      renderer.resetCamera();
+      renderer.getActiveCamera().elevation(20);
+      renderer.resetCameraClippingRange();
+      sliceRenderer.addActor(sliceActor);
+      sliceRenderer.resetCamera();
+    }
+  }
+
+  totalCount++;
+  renderer.getActiveCamera().azimuth(1);
+  renderWindow.render();
+};
+
+if (userParams.mode) {
+  console.log('Using modified test method');
+  animcb = interactor.onAnimation(myTestAVolume);
+} else {
+  console.log('Using previous test method');
+  animcb = interactor.onAnimation(testAVolume);
+}
+
+// configureScene(1, 1, 1, 1, 2);
+// // configureScene(0, 1, 0, 0, 0);
+
+// renderer.resetCamera();
+// renderer.getActiveCamera().elevation(20);
+// renderer.resetCameraClippingRange();
+// sliceRenderer.addActor(sliceActor);
+// sliceRenderer.resetCamera();
+
+// renderer.getActiveCamera().azimuth(1);
+// renderWindow.render();
+
+// console.log('Did a render');
+
+// // shade=0 numComponents=1 independent=0 GO=0 dataType=0
+// configureScene(0, 1, 0, 0, 0);
+
+// renderWindow.render();
 
 interactor.requestAnimation(actor);

@@ -556,6 +556,7 @@ function vtkOpenGLTexture(publicAPI, model) {
       dataType !== VtkDataTypes.FLOAT &&
       model.openGLDataType === model.context.FLOAT
     ) {
+      console.log(`updateArrayDataType, case 1 (float), data length: ${data.length}`);
       const pixCount = model.width * model.height * model.components;
       for (let idx = 0; idx < data.length; idx++) {
         const newArray = new Float32Array(pixCount);
@@ -572,6 +573,7 @@ function vtkOpenGLTexture(publicAPI, model) {
       dataType !== VtkDataTypes.UNSIGNED_CHAR &&
       model.openGLDataType === model.context.UNSIGNED_BYTE
     ) {
+      console.log(`updateArrayDataType, case 2 (unsigned byte), data length: ${data.length}`);
       const pixCount = model.width * model.height * model.components;
       for (let idx = 0; idx < data.length; idx++) {
         const newArray = new Uint8Array(pixCount);
