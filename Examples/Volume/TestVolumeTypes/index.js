@@ -23,10 +23,9 @@ const userParams = vtkURLExtract.extractURLParameters();
 // Create some control UI
 const container = document.querySelector('body');
 
-// <script src="http://benvanik.github.com/WebGL-Inspector/core/embed.js"></script>
-const newScript = document.createElement('script');
-newScript.src = 'http://benvanik.github.com/WebGL-Inspector/core/embed.js';
-container.appendChild(newScript);
+// const newScript = document.createElement('script');
+// newScript.src = 'http://benvanik.github.com/WebGL-Inspector/core/embed.js';
+// container.appendChild(newScript);
 
 container.style.width = '450px';
 container.style.height = '450px';
