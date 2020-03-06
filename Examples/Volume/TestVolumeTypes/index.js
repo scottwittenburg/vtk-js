@@ -2,12 +2,13 @@ import 'vtk.js/Sources/favicon';
 
 import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransferFunction';
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
+import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
-import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
-import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
+// import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
+// import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
-import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
-import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
+// import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
+// import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
 import vtkURLExtract from 'vtk.js/Sources/Common/Core/URLExtract';
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
@@ -16,26 +17,42 @@ import vtkImageMapper from 'vtk.js/Sources/Rendering/Core/ImageMapper';
 import vtkImageSlice from 'vtk.js/Sources/Rendering/Core/ImageSlice';
 import Constants from 'vtk.js/Sources/Rendering/Core/ImageMapper/Constants';
 
+import controlPanel from './controlPanel.html';
+
 const { SlicingMode } = Constants;
 
 const userParams = vtkURLExtract.extractURLParameters();
 
 // Create some control UI
 const container = document.querySelector('body');
-
-// const newScript = document.createElement('script');
-// newScript.src = 'http://benvanik.github.com/WebGL-Inspector/core/embed.js';
-// container.appendChild(newScript);
-
 container.style.width = '450px';
 container.style.height = '450px';
 const renderWindowContainer = document.createElement('div');
 container.appendChild(renderWindowContainer);
 
+const style = {
+  margin: '0',
+  padding: '0',
+  position: 'absolute',
+  top: '0',
+  left: '0',
+  width: '450px',
+  height: '450px',
+  overflow: 'hidden',
+};
+
 // create what we will view
-const renderWindow = vtkRenderWindow.newInstance();
-const renderer = vtkRenderer.newInstance();
-renderWindow.addRenderer(renderer);
+// const renderWindow = vtkRenderWindow.newInstance();
+// const renderer = vtkRenderer.newInstance();
+const fullScreenRenderWindow = vtkFullScreenRenderWindow.newInstance({
+  background: [0, 0, 0],
+  containerStyle: style,
+});
+const renderWindow = fullScreenRenderWindow.getRenderWindow();
+const renderer = fullScreenRenderWindow.getRenderer();
+const interactor = fullScreenRenderWindow.getInteractor();
+fullScreenRenderWindow.addController(controlPanel);
+// renderWindow.addRenderer(renderer);
 renderer.setBackground(0.2, 0.2, 0.2);
 
 const actor = vtkVolume.newInstance();
@@ -44,19 +61,19 @@ const mapper = vtkVolumeMapper.newInstance();
 mapper.setSampleDistance(0.7);
 actor.setMapper(mapper);
 
-// now create something to view it, in this case webgl
-const glwindow = vtkOpenGLRenderWindow.newInstance();
-glwindow.setContainer(renderWindowContainer);
-renderWindow.addView(glwindow);
-glwindow.setSize(400, 400);
+// // now create something to view it, in this case webgl
+// const glwindow = vtkOpenGLRenderWindow.newInstance();
+// glwindow.setContainer(renderWindowContainer);
+// renderWindow.addView(glwindow);
+// glwindow.setSize(400, 400);
 
-// Interactor
-const interactor = vtkRenderWindowInteractor.newInstance();
-interactor.setStillUpdateRate(0.01);
-interactor.setView(glwindow);
-interactor.initialize();
-interactor.bindEvents(renderWindowContainer);
-interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
+// // Interactor
+// const interactor = vtkRenderWindowInteractor.newInstance();
+// interactor.setStillUpdateRate(0.01);
+// interactor.setView(glwindow);
+// interactor.initialize();
+// interactor.bindEvents(renderWindowContainer);
+// interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
 
 renderer.addVolume(actor);
 
@@ -115,7 +132,7 @@ renderWindow.setNumberOfLayers(2);
 // On top
 sliceRenderer.setLayer(0);
 sliceRenderer.setInteractive(false);
-sliceRenderer.setBackground(0.4, 0.4, 0.4);
+// sliceRenderer.setBackground(0.4, 0.4, 0.4);
 const sliceMapper = vtkImageMapper.newInstance();
 const sliceActor = vtkImageSlice.newInstance();
 sliceActor.setMapper(sliceMapper);
