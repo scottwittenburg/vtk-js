@@ -4,13 +4,8 @@ import vtkColorTransferFunction from 'vtk.js/Sources/Rendering/Core/ColorTransfe
 import vtkDataArray from 'vtk.js/Sources/Common/Core/DataArray';
 import vtkFullScreenRenderWindow from 'vtk.js/Sources/Rendering/Misc/FullScreenRenderWindow';
 import vtkImageData from 'vtk.js/Sources/Common/DataModel/ImageData';
-// import vtkInteractorStyleTrackballCamera from 'vtk.js/Sources/Interaction/Style/InteractorStyleTrackballCamera';
-// import vtkOpenGLRenderWindow from 'vtk.js/Sources/Rendering/OpenGL/RenderWindow';
 import vtkPiecewiseFunction from 'vtk.js/Sources/Common/DataModel/PiecewiseFunction';
-// import vtkRenderWindow from 'vtk.js/Sources/Rendering/Core/RenderWindow';
-// import vtkRenderWindowInteractor from 'vtk.js/Sources/Rendering/Core/RenderWindowInteractor';
 import vtkRenderer from 'vtk.js/Sources/Rendering/Core/Renderer';
-import vtkURLExtract from 'vtk.js/Sources/Common/Core/URLExtract';
 import vtkVolume from 'vtk.js/Sources/Rendering/Core/Volume';
 import vtkVolumeMapper from 'vtk.js/Sources/Rendering/Core/VolumeMapper';
 import vtkImageMapper from 'vtk.js/Sources/Rendering/Core/ImageMapper';
@@ -20,8 +15,6 @@ import Constants from 'vtk.js/Sources/Rendering/Core/ImageMapper/Constants';
 import controlPanel from './controlPanel.html';
 
 const { SlicingMode } = Constants;
-
-const userParams = vtkURLExtract.extractURLParameters();
 
 // Create some control UI
 const container = document.querySelector('body');
@@ -42,8 +35,6 @@ const style = {
 };
 
 // create what we will view
-// const renderWindow = vtkRenderWindow.newInstance();
-// const renderer = vtkRenderer.newInstance();
 const fullScreenRenderWindow = vtkFullScreenRenderWindow.newInstance({
   background: [0, 0, 0],
   containerStyle: style,
@@ -52,7 +43,6 @@ const renderWindow = fullScreenRenderWindow.getRenderWindow();
 const renderer = fullScreenRenderWindow.getRenderer();
 const interactor = fullScreenRenderWindow.getInteractor();
 fullScreenRenderWindow.addController(controlPanel);
-// renderWindow.addRenderer(renderer);
 renderer.setBackground(0.2, 0.2, 0.2);
 
 const actor = vtkVolume.newInstance();
@@ -60,20 +50,6 @@ const actor = vtkVolume.newInstance();
 const mapper = vtkVolumeMapper.newInstance();
 mapper.setSampleDistance(0.7);
 actor.setMapper(mapper);
-
-// // now create something to view it, in this case webgl
-// const glwindow = vtkOpenGLRenderWindow.newInstance();
-// glwindow.setContainer(renderWindowContainer);
-// renderWindow.addView(glwindow);
-// glwindow.setSize(400, 400);
-
-// // Interactor
-// const interactor = vtkRenderWindowInteractor.newInstance();
-// interactor.setStillUpdateRate(0.01);
-// interactor.setView(glwindow);
-// interactor.initialize();
-// interactor.bindEvents(renderWindowContainer);
-// interactor.setInteractorStyle(vtkInteractorStyleTrackballCamera.newInstance());
 
 renderer.addVolume(actor);
 
@@ -126,7 +102,7 @@ for (let nc = 0; nc < 4; ++nc) {
 
 // Create the image slice representation
 const sliceRenderer = vtkRenderer.newInstance();
-sliceRenderer.setViewport([0.1, 0.6, 0.4, 0.9]);
+sliceRenderer.setViewport([0.6, 0.1, 0.9, 0.4]);
 renderWindow.addRenderer(sliceRenderer);
 renderWindow.setNumberOfLayers(2);
 // On top
@@ -160,10 +136,7 @@ sliceActor.getProperty().setComponentWeight(3, 1.0);
 // 3) with and without Gradient opacity
 // 4) Uint8 Int16 and Float32 data types
 //
-let animcb;
-let totalCount = 0;
 let lighting = 1;
-// let numComp = 4;
 let numComp = 1;
 let independent = 1;
 let withGO = 1;
@@ -248,115 +221,68 @@ const configureScene = (
   sliceMapper.setInputData(id);
 };
 
-const testAVolume = () => {
-  // if (totalCount >= 1) {
-  if (totalCount >= 120 * 3 * 2 * 4 * 2 * 2) {
-    interactor.cancelAnimation(actor);
-    animcb.unsubscribe();
-    return;
-  }
-
-  // do we need to update?
-  if (totalCount % 120 === 0) {
-    // update lighting
-    if (totalCount % (720 * 4 * 2) === 0) {
-      lighting = (lighting + 1) % 2;
-    }
-    // update independent
-    if (totalCount % (720 * 4) === 0) {
-      independent = (independent + 1) % 2;
-    }
-    // update numComp
-    if (totalCount % 720 === 0) {
-      numComp = (numComp % 4) + 1;
-    }
-    // update withGO?
-    if (totalCount % 360 === 0) {
-      withGO = (withGO + 1) % 2;
-    }
-
-    dataType = (dataType + 1) % 3;
-
-    configureScene(lighting, numComp, independent, withGO, dataType);
-
-    if (totalCount === 0) {
-      renderer.resetCamera();
-      renderer.getActiveCamera().elevation(20);
-      renderer.resetCameraClippingRange();
-      sliceRenderer.addActor(sliceActor);
-      sliceRenderer.resetCamera();
-    }
-  }
-
-  totalCount++;
-  renderer.getActiveCamera().azimuth(1);
+function redrawScene() {
+  configureScene(lighting, numComp, independent, withGO, dataType);
   renderWindow.render();
-};
-
-const myTestAVolume = () => {
-  // 1) shade=0 numComponents=2 independent=0 GO=0 dataType=0
-  // 2) shade=0 numComponents=2 independent=0 GO=0 dataType=1
-  // 3) shade=0 numComponents=2 independent=0 GO=1 dataType=0
-  // 4) shade=0 numComponents=1 independent=0 GO=0 dataType=0
-  const combinations = [
-    [0, 2, 0, 0, 0],
-    [0, 2, 0, 0, 1],
-    [0, 2, 0, 1, 0],
-    [0, 1, 0, 0, 0],
-    [0, 1, 1, 0, 0],
-  ];
-
-  if (totalCount >= 120 * combinations.length) {
-    interactor.cancelAnimation(actor);
-    animcb.unsubscribe();
-    return;
-  }
-
-  // do we need to update?
-  if (totalCount % 120 === 0) {
-    const index = totalCount / 120;
-
-    configureScene(...combinations[index]);
-
-    if (totalCount === 0) {
-      renderer.resetCamera();
-      renderer.getActiveCamera().elevation(20);
-      renderer.resetCameraClippingRange();
-      sliceRenderer.addActor(sliceActor);
-      sliceRenderer.resetCamera();
-    }
-  }
-
-  totalCount++;
-  renderer.getActiveCamera().azimuth(1);
-  renderWindow.render();
-};
-
-if (userParams.mode) {
-  console.log('Using modified test method');
-  animcb = interactor.onAnimation(myTestAVolume);
-} else {
-  console.log('Using previous test method');
-  animcb = interactor.onAnimation(testAVolume);
 }
 
-// configureScene(1, 1, 1, 1, 2);
-// // configureScene(0, 1, 0, 0, 0);
+function updateLighting(e) {
+  const elt = e ? e.target : document.querySelector('.lighting');
+  lighting = elt.checked ? 1 : 0;
+  console.log(`Updating lighting to be ${lighting}`);
+  redrawScene();
+}
 
-// renderer.resetCamera();
-// renderer.getActiveCamera().elevation(20);
-// renderer.resetCameraClippingRange();
-// sliceRenderer.addActor(sliceActor);
-// sliceRenderer.resetCamera();
+function updateNumberOfComponents(e) {
+  const elt = e ? e.target : document.querySelector('.numComp');
+  numComp = Number(elt.value);
+  console.log(`Updating number of components to be ${numComp}`);
+  redrawScene();
+}
 
-// renderer.getActiveCamera().azimuth(1);
-// renderWindow.render();
+function updateIndependent(e) {
+  const elt = e ? e.target : document.querySelector('.independent');
+  independent = elt.checked ? 1 : 0;
+  console.log(`Updating independent components to be ${independent}`);
+  redrawScene();
+}
 
-// console.log('Did a render');
+function updateGradientOpacity(e) {
+  const elt = e ? e.target : document.querySelector('.gradientOpacity');
+  withGO = elt.checked ? 1 : 0;
+  console.log(`Updating gradient opacity to be ${withGO}`);
+  redrawScene();
+}
 
-// // shade=0 numComponents=1 independent=0 GO=0 dataType=0
-// configureScene(0, 1, 0, 0, 0);
+function updateDataType(e) {
+  const elt = e ? e.target : document.querySelector('.dataType');
+  dataType = Number(elt.value);
+  console.log(`Updating data type to be ${dataType}`);
+  redrawScene();
+}
 
-// renderWindow.render();
+document.querySelector('.lighting').addEventListener('input', updateLighting);
+
+document
+  .querySelector('.numComp')
+  .addEventListener('input', updateNumberOfComponents);
+
+document
+  .querySelector('.independent')
+  .addEventListener('input', updateIndependent);
+
+document
+  .querySelector('.gradientOpacity')
+  .addEventListener('input', updateGradientOpacity);
+
+document.querySelector('.dataType').addEventListener('input', updateDataType);
+
+configureScene(lighting, numComp, independent, withGO, dataType);
+
+renderer.resetCamera();
+renderer.getActiveCamera().elevation(20);
+renderer.resetCameraClippingRange();
+sliceRenderer.addActor(sliceActor);
+sliceRenderer.resetCamera();
 
 interactor.requestAnimation(actor);
