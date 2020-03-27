@@ -26,10 +26,10 @@ function vtkImageProperty(publicAPI, model) {
         mTime = mTime > time ? mTime : time;
       }
 
-      // Opacity MTimes
-      if (model.componentData[index].scalarOpacity) {
-        // time that Scalar opacity transfer function was last modified
-        time = model.componentData[index].scalarOpacity.getMTime();
+      // Piecewise function MTimes
+      if (model.componentData[index].piecewiseFunction) {
+        // time that weighting function was last modified
+        time = model.componentData[index].piecewiseFunction.getMTime();
         mTime = mTime > time ? mTime : time;
       }
     }
@@ -38,77 +38,56 @@ function vtkImageProperty(publicAPI, model) {
   };
 
   // Set the color of a volume to an RGB transfer function
-  publicAPI.setRGBTransferFunction = (index, func) => {
-    // backwards compatible call without the component index
-    let idx = index;
-    let transferFunc = func;
-    if (!Number.isInteger(index)) {
-      transferFunc = index;
-      idx = 0;
-    }
-    if (model.componentData[idx].rGBTransferFunction !== transferFunc) {
-      model.componentData[idx].rGBTransferFunction = transferFunc;
+  publicAPI.setRGBTransferFunction = (func, idx = 0) => {
+    if (model.componentData[idx].rGBTransferFunction !== func) {
+      model.componentData[idx].rGBTransferFunction = func;
       publicAPI.modified();
     }
   };
 
   // Get the currently set RGB transfer function.
-  publicAPI.getRGBTransferFunction = (index) => {
-    // backwards compatible call without the component index
-    let idx = index;
-    if (!Number.isInteger(index)) {
-      idx = 0;
-    }
+  publicAPI.getRGBTransferFunction = (idx = 0) =>
+    model.componentData[idx].rGBTransferFunction;
 
-    return model.componentData[idx].rGBTransferFunction;
-  };
-
-  // Set the scalar opacity of a volume to a transfer function
-  publicAPI.setScalarOpacity = (index, func) => {
-    // backwards compatible call without the component index
-    let idx = index;
-    let transferFunc = func;
-    if (!Number.isInteger(index)) {
-      transferFunc = index;
-      idx = 0;
-    }
-    if (model.componentData[idx].scalarOpacity !== transferFunc) {
-      model.componentData[idx].scalarOpacity = transferFunc;
+  // Set the piecewise function
+  publicAPI.setPiecewiseFunction = (func, index) => {
+    if (model.componentData[index].piecewiseFunction !== func) {
+      model.componentData[index].piecewiseFunction = func;
       publicAPI.modified();
     }
   };
 
-  // Get the scalar opacity transfer function.
-  publicAPI.getScalarOpacity = (index) => {
-    // backwards compatible call without the component index
-    let idx = index;
-    if (!Number.isInteger(index)) {
-      idx = 0;
-    }
+  // Get the component weighting function.
+  publicAPI.getPiecewiseFunction = (idx = 0) =>
+    model.componentData[idx].piecewiseFunction;
 
-    return model.componentData[idx].scalarOpacity;
-  };
+  // Alias to set the piecewise function (backwards compat)
+  publicAPI.setScalarOpacity = (func, idx = 0) =>
+    publicAPI.setPiecewiseFunction(func, idx);
 
-  publicAPI.setComponentWeight = (index, value) => {
-    if (index < 0 || index >= VTK_MAX_VRCOMP) {
-      vtkErrorMacro('Invalid index');
+  // Alias to get the piecewise function (backwards compat)
+  publicAPI.getScalarOpacity = (idx = 0) => publicAPI.getPiecewiseFunction(idx);
+
+  publicAPI.setComponentWeight = (value, compIdx) => {
+    if (compIdx < 0 || compIdx >= VTK_MAX_VRCOMP) {
+      vtkErrorMacro('Invalid compIdx');
       return;
     }
 
     const val = Math.min(1, Math.max(0, value));
-    if (model.componentData[index].componentWeight !== val) {
-      model.componentData[index].componentWeight = val;
+    if (model.componentData[compIdx].componentWeight !== val) {
+      model.componentData[compIdx].componentWeight = val;
       publicAPI.modified();
     }
   };
 
-  publicAPI.getComponentWeight = (index) => {
-    if (index < 0 || index >= VTK_MAX_VRCOMP) {
+  publicAPI.getComponentWeight = (compIdx) => {
+    if (compIdx < 0 || compIdx >= VTK_MAX_VRCOMP) {
       vtkErrorMacro('Invalid index');
       return 0.0;
     }
 
-    return model.componentData[index].componentWeight;
+    return model.componentData[compIdx].componentWeight;
   };
 
   publicAPI.setInterpolationTypeToNearest = () => {
@@ -149,7 +128,7 @@ export function extend(publicAPI, model, initialValues = {}) {
     for (let i = 0; i < VTK_MAX_VRCOMP; i++) {
       model.componentData.push({
         rGBTransferFunction: null,
-        scalarOpacity: null,
+        piecewiseFunction: null,
         componentWeight: 1.0,
       });
     }

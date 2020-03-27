@@ -114,18 +114,18 @@ sliceRenderer.setInteractive(false);
 const sliceMapper = vtkImageMapper.newInstance();
 const sliceActor = vtkImageSlice.newInstance();
 sliceActor.setMapper(sliceMapper);
-sliceActor.getProperty().setRGBTransferFunction(0, ctfun);
-sliceActor.getProperty().setScalarOpacity(0, ofun);
-sliceActor.getProperty().setComponentWeight(0, 1.0);
-sliceActor.getProperty().setRGBTransferFunction(1, ctfun2);
-sliceActor.getProperty().setScalarOpacity(1, ofun2);
-sliceActor.getProperty().setComponentWeight(1, 1.0);
-sliceActor.getProperty().setRGBTransferFunction(2, ctfun3);
-sliceActor.getProperty().setScalarOpacity(2, ofun);
-sliceActor.getProperty().setComponentWeight(2, 1.0);
-sliceActor.getProperty().setRGBTransferFunction(3, ctfun4);
-sliceActor.getProperty().setScalarOpacity(3, ofun);
-sliceActor.getProperty().setComponentWeight(3, 1.0);
+sliceActor.getProperty().setRGBTransferFunction(ctfun, 0);
+sliceActor.getProperty().setPiecewiseFunction(ofun, 0);
+sliceActor.getProperty().setComponentWeight(1.0, 0);
+sliceActor.getProperty().setRGBTransferFunction(ctfun2, 1);
+sliceActor.getProperty().setPiecewiseFunction(ofun2, 1);
+sliceActor.getProperty().setComponentWeight(1.0, 1);
+sliceActor.getProperty().setRGBTransferFunction(ctfun3, 2);
+sliceActor.getProperty().setPiecewiseFunction(ofun, 2);
+sliceActor.getProperty().setComponentWeight(1.0, 2);
+sliceActor.getProperty().setRGBTransferFunction(ctfun4, 3);
+sliceActor.getProperty().setPiecewiseFunction(ofun, 3);
+sliceActor.getProperty().setComponentWeight(1.0, 3);
 
 // this function will over time test the following from outermost
 // to innermost. Note that the three data types will be
@@ -244,7 +244,7 @@ function updateNumberOfComponents(e) {
 
 function updateIndependent(e) {
   const elt = e ? e.target : document.querySelector('.independent');
-  independent = elt.checked ? 1 : 0;
+  independent = elt.checked;
   console.log(`Updating independent components to be ${independent}`);
   redrawScene();
 }
